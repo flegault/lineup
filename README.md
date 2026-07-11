@@ -10,6 +10,12 @@ Ouvrez `index.html` dans un navigateur moderne. Aucune installation ni serveur n
 
 Les données du bassin, du match en cours, des réglages et de l’historique sont stockées dans `localStorage` sur l’appareil utilisé.
 
+## Règles d’affaires
+
+Les règles appliquées par l’application sont décrites dans [la documentation des règles d’affaires](docs/regles-affaires.md).
+
+L’architecture et les détails d’implémentation sont décrits dans [la documentation technique](docs/technique.md).
+
 ## Déploiement sur GitHub Pages
 
 1. Envoyez le contenu de ce dépôt sur la branche `main` de [`flegault/lineup`](https://github.com/flegault/lineup).
