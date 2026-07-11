@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lineup — Hockey amical</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar"><div><p class="eyebrow">HOCKEY AMICAL</p><h1>Lineup</h1></div><p class="tagline">Des équipes justes. Un match encore meilleur.</p></header>
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab active" data-view="match">Match</button>
+    <button class="tab" data-view="players">Joueurs</button>
+    <button class="tab" data-view="history">Historique & réglages</button>
+  </nav>
+  <main id="app"></main>
+  <template id="player-form-template"><form id="player-form" class="player-form">
+    <label>Nom<input name="name" required maxlength="50" placeholder="Ex. Alex Tremblay"></label>
+    <fieldset><legend>Positions jouables</legend><label><input type="checkbox" name="goalie"> Gardien</label><label><input type="checkbox" name="defense"> Défenseur</label><label><input type="checkbox" name="attack"> Attaquant</label></fieldset>
+    <div class="ratings"><label class="rating-goalie">Niveau gardien<input name="goalieRating" type="number" min="0" max="10" step="0.5" value="5"></label><label class="rating-defense">Niveau défenseur<input name="defenseRating" type="number" min="0" max="10" step="0.5" value="5"></label><label class="rating-attack">Niveau attaquant<input name="attackRating" type="number" min="0" max="10" step="0.5" value="5"></label><label>Niveau cardio<input name="cardio" type="number" min="0" max="10" step="0.5" value="5" required></label></div>
+    <div class="form-actions"><button class="button primary" type="submit">Enregistrer</button><button class="button ghost" type="button" data-action="cancel-player">Annuler</button></div>
+  </form></template>
+  <script src="app.js"></script>
+</body>
+</html>
