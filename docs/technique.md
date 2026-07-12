@@ -60,6 +60,8 @@ Une entrée d’équipe courante est `{ player, position }`. Une archive conserv
 
 Les filtres Joueurs sont conservés en mémoire dans `playerFilters`, mais ne sont pas persistés. La recherche utilise une normalisation Unicode NFD pour retirer les accents avant la comparaison.
 
+Le formulaire `playerForm()` est rendu dans la modale `player-editor`. Les erreurs sont injectées dans `#player-form-error`; la comparaison normalisée empêche les doublons manuels sans remplacer la modale.
+
 ## Présences et affectations
 
 La carte de synthèse des présences ouvre une modale dynamique :
@@ -69,6 +71,8 @@ La carte de synthèse des présences ouvre une modale dynamique :
 - `lastPlayed()` cherche la date la plus récente d’un match archivé contenant l’identifiant du joueur.
 
 Les remplaçants sont triés par date décroissante, puis par nom; une date absente les place après les joueurs ayant déjà participé.
+
+Lors d’un changement de présence, la position de `.modal-body` est capturée avant `render()`, puis restaurée avec le focus du joueur modifié.
 
 Les affectations n’utilisent aucun glisser-déposer. La modale « Modifier » produit seulement les combinaisons permises, empêche un deuxième gardien dans la même équipe et garantit l’unicité du joueur avec `removeFromTeams()` avant l’ajout. Le choix actuel possède `aria-pressed="true"`; le sélectionner de nouveau retire l’affectation. Les modifications sont immédiates et la modale reste ouverte jusqu’au bouton « OK ».
 
@@ -98,11 +102,13 @@ L’indicateur visuel est `max(0, 100 - score × 2)` et ne modifie pas l’algor
 
 ## Génération, import, export et effacement
 
-`generatePool()` valide quatre quantités de 0 à 100, bloque un bassin non vide et crée les joueurs actifs. Les gardiens exclusifs sont G seulement; les autres utilisent un modèle aléatoire contenant toujours D ou A. Les réguliers générés deviennent les présences initiales et `match.teams` reste vide.
+`generatePool()` valide quatre quantités de 0 à 100, bloque un bassin non vide et crée les joueurs actifs. Les gardiens exclusifs sont G seulement; tous les autres utilisent exclusivement D, A ou D+A. Les réguliers générés deviennent les présences initiales et `match.teams` reste vide.
 
 `parseImport()` accepte les formats historiques et le nouveau champ ACTIF/INACTIF. Il valide chaque ligne indépendamment et renvoie joueurs, doublons et erreurs.
 
 `exportText()` produit un format réimportable trié par statut puis par nom. Le téléchargement utilise un `Blob` local et une URL temporaire.
+
+Le téléchargement préfixe le texte avec `\uFEFF` pour signaler UTF-8 aux logiciels Windows. Le presse-papiers reste sans BOM et `parseImport()` retire un BOM éventuel avant la lecture de la première ligne.
 
 L’effacement du bassin vide `players`, `match.present` et `match.teams`, tout en conservant `history` et `settings`. L’effacement de l’historique modifie uniquement `history`.
 
@@ -114,7 +120,8 @@ L’effacement du bassin vide `players`, `match.present` et `match.teams`, tout 
 - Les modales utilisent `role="dialog"` et `aria-modal="true"`.
 - Les actions disposent de noms accessibles et de zones tactiles d’au moins 44 px.
 - Sur mobile, les modales deviennent des panneaux presque plein écran et les équipes sont empilées.
-- La sélection d’un joueur fait défiler vers le formulaire sans ouvrir le clavier.
+- L’ajout et la modification utilisent une modale presque plein écran sur mobile, sans défilement préalable de la page.
+- Les modales acceptent Échap, mémorisent leur déclencheur et lui rendent le focus à la fermeture.
 - Aucun `alert()`, `confirm()` ni glisser-déposer n’est utilisé.
 
 ## Vérification

@@ -80,6 +80,7 @@
   let view = 'match';
   let editingPlayerId = null;
   let modal = null;
+  let modalReturnFocusSelector = null;
   let configTab = 'generate';
   let attendanceTab = 'regulier';
   let attendanceQuery = '';
@@ -118,14 +119,27 @@
     }, 3500);
   }
 
+  function focusSelectorFor(element) {
+    if (!element) return null;
+    for (const attribute of ['data-select', 'data-action', 'data-assign-player', 'data-view']) {
+      const value = element.getAttribute?.(attribute);
+      if (value) return `[${attribute}="${CSS.escape(value)}"]`;
+    }
+    return element.id ? `#${CSS.escape(element.id)}` : null;
+  }
+
   function showModal(title, body = '', actions = [], extra = {}) {
+    if (!modal) modalReturnFocusSelector = focusSelectorFor(document.activeElement);
     modal = { title, body, actions, ...extra };
-    renderModal();
+    renderModal(true);
   }
 
   function closeModal() {
+    const returnFocusSelector = modalReturnFocusSelector;
     modal = null;
+    modalReturnFocusSelector = null;
     renderModal();
+    if (returnFocusSelector) requestAnimationFrame(() => $(returnFocusSelector)?.focus());
   }
 
   function gearIcon() {
@@ -324,7 +338,7 @@
   function playerForm() {
     const selected = editingPlayer();
     const player = selected || { name: '', positions: [], ratings: { goalie: 5, defense: 5, attack: 5 }, cardio: 5, status: 'regulier', active: true };
-    return `<article class="card player-editor" id="player-editor"><h2 tabindex="-1">${selected ? 'Modifier le joueur' : 'Ajouter un joueur'}</h2><form id="player-form" class="form"><label class="name-field"><span>Nom du joueur</span><input name="name" required autocomplete="off" placeholder="Ex. John Lajoie" value="${escapeHtml(player.name)}"></label><div class="position-options" aria-label="Positions">${Object.keys(POSITIONS).map(position => `<label><input type="checkbox" name="pos" value="${position}" ${positionsOf(player).includes(position) ? 'checked' : ''}><span>${POSITIONS[position]}</span></label>`).join('')}</div><div class="ratings-grid">${Object.keys(POSITIONS).map(position => ratingField(player, position)).join('')}</div><label class="rating">Niveau cardio <output>${player.cardio}</output><input type="range" name="cardio" min="0" max="10" step="1" value="${player.cardio}"></label><div class="segmented-group" aria-label="Statut du joueur"><label><input type="radio" name="status" value="regulier" ${player.status === 'regulier' ? 'checked' : ''}><span>Régulier</span></label><label><input type="radio" name="status" value="remplacant" ${player.status === 'remplacant' ? 'checked' : ''}><span>Remplaçant</span></label></div><div class="segmented-group" aria-label="État du joueur"><label><input type="radio" name="activity" value="active" ${player.active ? 'checked' : ''}><span>Actif</span></label><label><input type="radio" name="activity" value="inactive" ${player.active ? '' : 'checked'}><span>Inactif</span></label></div><div class="form-actions"><button class="button primary">${selected ? 'Enregistrer' : 'Ajouter le joueur'}</button><button type="button" class="button" data-action="cancel">Annuler</button></div></form></article>`;
+    return `<form id="player-form" class="form"><div id="player-form-error" class="notice error player-form-error" role="alert"></div><label class="name-field"><span>Nom du joueur</span><input name="name" required autocomplete="off" placeholder="Ex. John Lajoie" value="${escapeHtml(player.name)}"></label><div class="position-options" aria-label="Positions">${Object.keys(POSITIONS).map(position => `<label><input type="checkbox" name="pos" value="${position}" ${positionsOf(player).includes(position) ? 'checked' : ''}><span>${POSITIONS[position]}</span></label>`).join('')}</div><div class="ratings-grid">${Object.keys(POSITIONS).map(position => ratingField(player, position)).join('')}</div><label class="rating">Niveau cardio <output>${player.cardio}</output><input type="range" name="cardio" min="0" max="10" step="1" value="${player.cardio}"></label><div class="segmented-group" aria-label="Statut du joueur"><label><input type="radio" name="status" value="regulier" ${player.status === 'regulier' ? 'checked' : ''}><span>Régulier</span></label><label><input type="radio" name="status" value="remplacant" ${player.status === 'remplacant' ? 'checked' : ''}><span>Remplaçant</span></label></div><div class="segmented-group" aria-label="État du joueur"><label><input type="radio" name="activity" value="active" ${player.active ? 'checked' : ''}><span>Actif</span></label><label><input type="radio" name="activity" value="inactive" ${player.active ? '' : 'checked'}><span>Inactif</span></label></div><div class="form-actions"><button class="button primary">${selected ? 'Enregistrer' : 'Ajouter le joueur'}</button><button type="button" class="button" data-action="cancel">Annuler</button></div></form>`;
   }
 
   function filteredPlayers(status) {
@@ -364,7 +378,7 @@
   }
 
   function playersView() {
-    return `<div class="page-stack"><header class="page-heading"><div><span class="eyebrow">BASSIN</span><h2>Joueurs</h2></div><button class="icon-button" data-action="player-settings" title="Gérer les joueurs" aria-label="Gérer les joueurs">${gearIcon()}</button></header><section class="grid split players-layout">${playerForm()}<article class="card player-directory">${playerSection('regulier')}${playerSection('remplacant')}</article></section></div>`;
+    return `<div class="page-stack"><header class="page-heading"><div><span class="eyebrow">BASSIN</span><h2>Joueurs</h2></div><div class="page-actions"><button class="button primary" data-action="add-player">Ajouter un joueur</button><button class="icon-button" data-action="player-settings" title="Gérer les joueurs" aria-label="Gérer les joueurs">${gearIcon()}</button></div></header><article class="card player-directory">${playerSection('regulier')}${playerSection('remplacant')}</article></div>`;
   }
 
   function historyTeam(team) {
@@ -439,10 +453,7 @@
     const templates = [
       ['defense'],
       ['attack'],
-      ['defense', 'attack'],
-      ['goalie', 'defense'],
-      ['goalie', 'attack'],
-      ['goalie', 'defense', 'attack']
+      ['defense', 'attack']
     ];
     const level = () => Math.floor(Math.random() * 11);
     const createGroup = (total, exclusiveGoalies, status, label) => Array.from({ length: total }, (_, index) => {
@@ -489,7 +500,7 @@
     return `<div class="assignment-player">${playerIdentity(player, { assignedPosition: current?.entry.position })}</div><div class="assignment-grid">${choices.map(choice => `<button class="assignment-choice role-border-${choice.position} ${choice.selected ? 'selected' : ''}" data-modal="assign:${choice.teamKey}:${choice.position}" aria-pressed="${choice.selected}"><span>${escapeHtml(state.settings[choice.teamKey])}</span><strong>${POSITIONS[choice.position]}</strong>${choice.selected ? '<small>Sélection actuelle · cliquer pour retirer</small>' : choice.swapsGoalies ? '<small>Échanger les gardiens</small>' : ''}</button>`).join('') || '<p class="muted">Aucune affectation disponible.</p>'}</div><div class="assignment-secondary"><button class="button danger" data-modal="make-absent">Rendre absent</button></div>`;
   }
 
-  function renderModal() {
+  function renderModal(focusInitial = false) {
     const root = $('#modal-root');
     if (!modal) {
       root.innerHTML = '';
@@ -499,7 +510,16 @@
     if (modal.kind === 'attendance') body = attendanceModalBody();
     else if (modal.kind === 'player-settings') body = configModalBody();
     else if (modal.kind === 'assignment') body = assignmentModalBody(modal.playerId);
+    else if (modal.kind === 'player-editor') body = playerForm();
     root.innerHTML = `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title"><section class="modal ${modal.kind ? `modal-${modal.kind}` : ''}"><div class="modal-titlebar"><h2 id="modal-title">${escapeHtml(modal.title)}</h2><button class="modal-close" data-modal="close" aria-label="Fermer">×</button></div><div class="modal-body">${body}</div>${modal.actions?.length ? `<div class="modal-actions">${modal.actions.map(([label, action, className]) => `<button class="button ${className || ''}" data-modal="${action || 'close'}">${escapeHtml(label)}</button>`).join('')}</div>` : ''}</section></div>`;
+    if (focusInitial) requestAnimationFrame(() => {
+      if (modal?.kind === 'player-editor' && !editingPlayer()) $('#player-form [name="name"]')?.focus();
+      else {
+        const title = $('#modal-title');
+        title?.setAttribute('tabindex', '-1');
+        title?.focus();
+      }
+    });
   }
 
   function render() {
@@ -511,7 +531,7 @@
   function parseImport(text) {
     const existing = new Set(state.players.map(player => normalizeText(player.name)));
     const result = { players: [], regulars: 0, substitutes: 0, incomplete: 0, duplicates: [], errors: [] };
-    text.split(/\r?\n/).forEach((rawLine, index) => {
+    text.replace(/^\uFEFF/, '').split(/\r?\n/).forEach((rawLine, index) => {
       const line = rawLine.trim();
       if (!line) return;
       const parts = line.split('|').map(part => part.trim());
@@ -606,12 +626,7 @@
     const selectButton = event.target.closest('[data-select]');
     if (selectButton) {
       editingPlayerId = selectButton.dataset.select;
-      render();
-      if (matchMedia('(max-width: 700px)').matches) requestAnimationFrame(() => {
-        const heading = $('#player-editor h2');
-        heading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        heading?.focus({ preventScroll: true });
-      });
+      showModal(`Modifier ${editingPlayer().name}`, '', [], { kind: 'player-editor' });
       return;
     }
 
@@ -659,7 +674,10 @@
 
     if (button.dataset.modal) {
       const action = button.dataset.modal;
-      if (action === 'close') closeModal();
+      if (action === 'close') {
+        if (modal?.kind === 'player-editor') editingPlayerId = null;
+        closeModal();
+      }
       else if (action === 'delete-player') {
         const playerId = modal.playerId;
         state.players = state.players.filter(player => player.id !== playerId);
@@ -701,7 +719,7 @@
         navigator.clipboard?.writeText(exportText());
         button.textContent = 'Copié';
       } else if (action === 'download-export') {
-        const blob = new Blob([exportText()], { type: 'text/plain;charset=utf-8' });
+        const blob = new Blob(['\uFEFF', exportText()], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -775,9 +793,12 @@
     } else if (action === 'player-settings') {
       configTab = 'generate';
       showModal('Gérer les joueurs', '', [], { kind: 'player-settings' });
+    } else if (action === 'add-player') {
+      editingPlayerId = null;
+      showModal('Ajouter un joueur', '', [], { kind: 'player-editor' });
     } else if (action === 'cancel') {
       editingPlayerId = null;
-      render();
+      closeModal();
     }
 
     if (button.dataset.delete) {
@@ -795,6 +816,7 @@
     const data = event.target.dataset;
     if (data.attendancePlayer) {
       const playerId = data.attendancePlayer;
+      const modalScrollTop = $('.modal-body')?.scrollTop || 0;
       if (event.target.checked) {
         if (!state.match.present.includes(playerId)) state.match.present.push(playerId);
       } else {
@@ -803,6 +825,11 @@
       }
       save();
       render();
+      requestAnimationFrame(() => {
+        const modalBody = $('.modal-body');
+        if (modalBody) modalBody.scrollTop = modalScrollTop;
+        $(`[data-attendance-player="${CSS.escape(playerId)}"]`)?.focus({ preventScroll: true });
+      });
     } else if (data.depth !== undefined) {
       state.settings.historyDepth = Number(event.target.value);
       save();
@@ -865,22 +892,41 @@
     if (output) output.value = event.target.value;
   });
 
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !modal) return;
+    event.preventDefault();
+    if (modal.kind === 'player-editor') editingPlayerId = null;
+    closeModal();
+  });
+
   document.addEventListener('submit', event => {
     if (event.target.id !== 'player-form') return;
     event.preventDefault();
     const form = event.target;
     const data = new FormData(form);
     const selected = editingPlayer();
+    const name = data.get('name').trim().replace(/\s+/g, ' ');
+    const formError = $('#player-form-error');
+    const showFormError = message => {
+      formError.textContent = message;
+      formError.setAttribute('tabindex', '-1');
+      formError.focus();
+    };
     const selectedPositions = [...form.querySelectorAll('input[name=pos]:checked')].map(input => input.value);
     if (!selectedPositions.length) {
-      showModal('Position requise', '<p>Choisissez au moins une position.</p>');
+      showFormError('Choisissez au moins une position.');
+      return;
+    }
+    const duplicate = state.players.find(player => player.id !== selected?.id && normalizeText(player.name) === normalizeText(name));
+    if (duplicate) {
+      showFormError(`Un joueur nommé « ${duplicate.name} » existe déjà.`);
       return;
     }
     const ratings = { ...(selected?.ratings || { goalie: 5, defense: 5, attack: 5 }) };
     selectedPositions.forEach(position => { ratings[position] = Number(data.get(position)); });
     const player = {
       id: selected?.id || uid(),
-      name: data.get('name').trim().replace(/\s+/g, ' '),
+      name,
       positions: selectedPositions,
       ratings,
       cardio: Number(data.get('cardio')),
@@ -901,6 +947,7 @@
     }
     editingPlayerId = null;
     save();
+    closeModal();
     render();
   });
 

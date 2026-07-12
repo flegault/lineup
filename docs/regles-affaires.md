@@ -13,6 +13,10 @@ Ce document décrit le comportement appliqué par la version actuelle de Lineup.
 
 ## Consultation du bassin
 
+- « Ajouter un joueur » et le clic sur un joueur ouvrent le formulaire dans une modale; la liste conserve toute la largeur de la page.
+- Annuler, fermer ou utiliser Échap abandonne les changements non enregistrés sans confirmation.
+- Un ajout ou une modification refuse un nom déjà utilisé en ignorant casse, accents et espaces superflus.
+- Les erreurs du formulaire restent dans la modale et ne suppriment pas les valeurs saisies.
 - Les réguliers et remplaçants sont triés alphabétiquement, sans regrouper les inactifs à part.
 - Chaque section affiche ses nombres totaux d’actifs et d’inactifs. Ces totaux ne changent pas avec les filtres.
 - Chaque section possède une recherche par nom et un filtre Tous/Actifs/Inactifs indépendants.
@@ -28,6 +32,7 @@ Ce document décrit le comportement appliqué par la version actuelle de Lineup.
 - Les remplaçants ayant déjà joué sont triés par date de match la plus récente, puis alphabétiquement; ceux n’ayant jamais joué sont placés à la fin.
 - Seuls les matchs archivés comptent comme participation.
 - Retirer une présence retire aussi ce joueur de son équipe, sans modifier les autres affectations.
+- Modifier une présence conserve la position de défilement, l’onglet, la recherche et le focus dans la modale.
 - La date est initialisée à aujourd’hui. Optimiser les équipes ne la modifie jamais.
 - « Recommencer » conserve la date et les présences, puis vide uniquement les affectations des deux équipes.
 
@@ -67,7 +72,7 @@ Ce document décrit le comportement appliqué par la version actuelle de Lineup.
 
 - La configuration des joueurs est accessible avec le bouton engrenage.
 - Le générateur fonctionne seulement lorsque le bassin est vide et demande les totaux de réguliers, remplaçants et gardiens exclusifs de chaque statut.
-- Les gardiens exclusifs sont inclus dans les totaux. Les autres joueurs reçoivent une combinaison aléatoire comprenant toujours défense ou attaque et pouvant aussi comprendre gardien.
+- Les gardiens exclusifs sont inclus dans les totaux et sont les seuls joueurs générés pouvant jouer gardien. Les autres reçoivent D, A ou D+A.
 - Les joueurs générés sont actifs, portent des noms numérotés et reçoivent des niveaux et un cardio entiers de 0 à 10.
 - La génération n’impose aucun minimum et sélectionne les réguliers générés comme présents, sans les affecter à une équipe.
 - Le format complet est `REG | Nom | G,D,A,cardio | ACTIF` ou `REM | Nom | G,D,A,cardio | INACTIF`.
@@ -76,6 +81,8 @@ Ce document décrit le comportement appliqué par la version actuelle de Lineup.
 - Une fiche sans position peut être importée avec `REG | Nom | ACTIF` ou `REM | Nom | INACTIF`.
 - Les doublons de nom, sans égard aux majuscules, accents et espaces superflus, sont ignorés.
 - L’export peut être copié ou téléchargé en fichier texte puis réimporté.
+- La syntaxe exportée utilise uniquement des codes ASCII; seuls les noms peuvent contenir des accents.
+- Le fichier téléchargé utilise UTF-8 avec BOM pour préserver les accents des noms. L’import accepte les textes avec ou sans BOM.
 - Effacer le bassin supprime les joueurs et vide les présences et équipes courantes, mais conserve l’historique, les noms d’équipe et les préférences.
 
 ## Archivage et persistance
