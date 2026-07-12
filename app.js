@@ -80,7 +80,7 @@
   let view = 'match';
   let editingPlayerId = null;
   let modal = null;
-  let configTab = 'import';
+  let configTab = 'generate';
   let attendanceTab = 'regulier';
   let attendanceQuery = '';
   let notice = '';
@@ -193,7 +193,9 @@
   }
 
   function assignRoles(players) {
-    const slots = state.settings.balancePositions ? ['defense', 'defense', 'attack', 'attack'] : [];
+    const slots = state.settings.balancePositions
+      ? players.length <= 3 ? ['defense', 'attack'] : ['defense', 'defense', 'attack', 'attack']
+      : [];
     return players.map(player => {
       const eligible = positionsOf(player).filter(position => position !== 'goalie');
       const position = slots.find(slot => eligible.includes(slot)) || [...eligible].sort((a, b) => rating(player, b) - rating(player, a))[0];
@@ -244,8 +246,8 @@
       showModal('Positions insuffisantes', `<p>Ces joueurs ne peuvent pas être répartis en défense ou en attaque :</p><ul>${invalidSkaters.map(player => `<li>${escapeHtml(player.name)}</li>`).join('')}</ul>`);
       return;
     }
-    if (skaters.length < 8) {
-      showModal('Effectif insuffisant', '<p>Il faut au moins huit joueurs en plus des deux gardiens pour viser deux défenseurs et deux attaquants par équipe.</p>');
+    if (skaters.length < 6) {
+      showModal('Effectif insuffisant', '<p>Il faut au moins six patineurs en plus des deux gardiens, soit un gardien et trois patineurs par équipe.</p>');
       return;
     }
     let best;
@@ -311,7 +313,7 @@
     const replacementCount = present.filter(player => player.status === 'remplacant').length;
     const result = evaluate(teams().white, teams().black);
     const quality = hasTeamPlayers() ? Math.max(0, 100 - Math.round(result.value * 2)) : null;
-    return `<div class="page-stack">${notice ? `<div id="page-notice" class="notice success" role="status">${escapeHtml(notice)}</div>` : ''}<section class="match-toolbar"><div class="match-title"><span>MATCH AMICAL</span><strong>Préparer les équipes</strong></div><div class="match-actions"><label class="date-field">Date du match<input data-date type="date" value="${state.match.date}"></label><button data-action="optimize" class="button primary">Optimiser les équipes</button><button data-action="reset" class="button">Réinitialiser</button>${hasTeamPlayers() ? '<button data-action="archive" class="button">Archiver</button>' : ''}</div></section><details class="optimization-options"><summary>Options d’optimisation</summary><div><label><span>Variété : tenir compte des <b data-depth-value>${state.settings.historyDepth}</b> derniers matchs</span><input data-depth type="range" min="0" max="5" value="${state.settings.historyDepth}"></label><label class="check-option"><input data-balance type="checkbox" ${state.settings.balancePositions ? 'checked' : ''}> Équilibrer les positions</label></div></details><section class="summary-grid"><button class="summary-card interactive" data-action="attendance"><span>Joueurs présents</span><strong>${present.length}</strong><small>${regularCount} réguliers · ${replacementCount} remplaçants</small><span class="summary-chevron" aria-hidden="true">›</span></button><div class="summary-card"><span>Gardiens disponibles</span><strong>${keepers}</strong><small>${assignedGoalies().white.length === 1 && assignedGoalies().black.length === 1 ? 'Un dans chaque équipe' : 'Placez un gardien par équipe'}</small></div><div class="summary-card"><span>Équilibre global</span><strong>${quality === null ? '—' : `${quality}%`}</strong><small>${quality === null ? 'Composez ou optimisez les équipes' : `Écart de force : ${Math.abs(result.a.total - result.b.total).toFixed(1)}`}</small></div></section>${teamsBoard()}</div>`;
+    return `<div class="page-stack">${notice ? `<div id="page-notice" class="notice success" role="status">${escapeHtml(notice)}</div>` : ''}<section class="match-toolbar"><div class="match-title"><span>MATCH AMICAL</span><strong>Préparer les équipes</strong></div><div class="match-actions"><label class="date-field">Date du match<input data-date type="date" value="${state.match.date}"></label><button data-action="optimize" class="button primary">Optimiser les équipes</button><button data-action="restart" class="button">Recommencer</button>${hasTeamPlayers() ? '<button data-action="archive" class="button">Archiver</button>' : ''}</div></section><details class="optimization-options"><summary>Options d’optimisation</summary><div><label><span>Variété : tenir compte des <b data-depth-value>${state.settings.historyDepth}</b> derniers matchs</span><input data-depth type="range" min="0" max="5" value="${state.settings.historyDepth}"></label><label class="check-option"><input data-balance type="checkbox" ${state.settings.balancePositions ? 'checked' : ''}> Équilibrer les positions</label></div></details><section class="summary-grid"><button class="summary-card interactive" data-action="attendance"><span>Joueurs présents</span><strong>${present.length}</strong><small>${regularCount} réguliers · ${replacementCount} remplaçants</small><span class="summary-chevron" aria-hidden="true">›</span></button><div class="summary-card"><span>Gardiens disponibles</span><strong>${keepers}</strong><small>${assignedGoalies().white.length === 1 && assignedGoalies().black.length === 1 ? 'Un dans chaque équipe' : 'Placez un gardien par équipe'}</small></div><div class="summary-card"><span>Équilibre global</span><strong>${quality === null ? '—' : `${quality}%`}</strong><small>${quality === null ? 'Composez ou optimisez les équipes' : `Écart de force : ${Math.abs(result.a.total - result.b.total).toFixed(1)}`}</small></div></section>${teamsBoard()}</div>`;
   }
 
   function ratingField(player, position) {
@@ -370,7 +372,7 @@
   }
 
   function historyView() {
-    return `<section class="card"><h2>Historique</h2>${state.history.length ? state.history.map((match, index) => `<article class="history-item"><div class="history-head"><strong>${escapeHtml(match.date)}</strong><button class="trash-button" data-delete-history="${index}" aria-label="Supprimer ce match">${trashIcon()}</button></div><h3>${escapeHtml(match.teams.white.name)}</h3>${historyTeam(match.teams.white)}<h3>${escapeHtml(match.teams.black.name)}</h3>${historyTeam(match.teams.black)}</article>`).join('') : '<p class="muted">Aucun match archivé.</p>'}</section>`;
+    return `<section class="card"><div class="section-heading history-title"><h2>Historique</h2>${state.history.length ? '<button class="button danger" data-action="clear-history">Effacer l’historique</button>' : ''}</div>${state.history.length ? state.history.map((match, index) => `<article class="history-item"><div class="history-head"><strong>${escapeHtml(match.date)}</strong><button class="trash-button" data-delete-history="${index}" aria-label="Supprimer ce match">${trashIcon()}</button></div><h3>${escapeHtml(match.teams.white.name)}</h3>${historyTeam(match.teams.white)}<h3>${escapeHtml(match.teams.black.name)}</h3>${historyTeam(match.teams.black)}</article>`).join('') : '<p class="muted">Aucun match archivé.</p>'}</section>`;
   }
 
   function lastPlayed(playerId) {
@@ -405,10 +407,67 @@
   }
 
   function configModalBody() {
-    const tabs = `<div class="modal-tabs"><button class="${configTab === 'import' ? 'active' : ''}" data-config-tab="import">Importer</button><button class="${configTab === 'export' ? 'active' : ''}" data-config-tab="export">Exporter</button><button class="${configTab === 'reset' ? 'active danger-tab' : ''}" data-config-tab="reset">Réinitialiser</button></div>`;
+    const tabs = `<div class="modal-tabs"><button class="${configTab === 'generate' ? 'active' : ''}" data-config-tab="generate">Générer</button><button class="${configTab === 'import' ? 'active' : ''}" data-config-tab="import">Importer</button><button class="${configTab === 'export' ? 'active' : ''}" data-config-tab="export">Exporter</button><button class="${configTab === 'reset' ? 'active danger-tab' : ''}" data-config-tab="reset">Effacer</button></div>`;
+    if (configTab === 'generate') {
+      const blocked = state.players.length > 0;
+      return `${tabs}${blocked ? '<div class="notice error"><strong>Le bassin doit être vide.</strong> Utilisez d’abord « Effacer le bassin ».</div>' : '<p class="muted">Crée un bassin synthétique actif avec des niveaux et un cardio de 0 à 10.</p>'}<div class="generator-grid"><label>Réguliers<input id="generate-regulars" type="number" min="0" max="100" step="1" value="10"></label><label>Gardiens exclusifs réguliers<input id="generate-regular-goalies" type="number" min="0" max="100" step="1" value="2"></label><label>Remplaçants<input id="generate-substitutes" type="number" min="0" max="100" step="1" value="5"></label><label>Gardiens exclusifs remplaçants<input id="generate-substitute-goalies" type="number" min="0" max="100" step="1" value="0"></label></div><div class="inline-actions"><button class="button primary" data-modal="generate-pool" ${blocked ? 'disabled' : ''}>Générer le bassin</button></div>`;
+    }
     if (configTab === 'import') return `${tabs}<p class="muted">Une ligne par joueur. Les anciens formats sans état restent acceptés.</p><pre>REG | John Lajoie | x,5,7,2 | ACTIF\nREM | Bobby | 8,x,x,1 | INACTIF\nREG | Paul Tremblay | ACTIF</pre><textarea id="import-text" class="import-text" rows="10" placeholder="Collez votre liste ici"></textarea><div class="inline-actions"><button class="button primary" data-modal="import-players">Importer</button></div>`;
     if (configTab === 'export') return `${tabs}<p class="muted">Ce texte peut être réimporté sans perdre les positions, niveaux, statuts ou états.</p><textarea id="export-text" class="import-text" rows="12" readonly>${escapeHtml(exportText())}</textarea><div class="inline-actions"><button class="button primary" data-modal="copy-export">Copier</button><button class="button" data-modal="download-export">Télécharger .txt</button></div>`;
-    return `${tabs}<div class="danger-zone"><h3>Réinitialiser le bassin</h3><p>Supprime tous les joueurs et vide les présences et équipes courantes. L’historique, les noms d’équipe et les préférences seront conservés.</p><button class="button danger" data-modal="confirm-pool-reset">Réinitialiser le bassin</button></div>`;
+    return `${tabs}<div class="danger-zone"><h3>Effacer le bassin</h3><p>Supprime tous les joueurs et vide les présences et équipes courantes. L’historique, les noms d’équipe et les préférences seront conservés.</p><button class="button danger" data-modal="confirm-pool-reset">Effacer le bassin</button></div>`;
+  }
+
+  function generatePool() {
+    if (state.players.length) {
+      showModal('Bassin non vide', '<p>Effacez le bassin actuel avant d’en générer un nouveau.</p>');
+      return;
+    }
+    const values = {
+      regulars: $('#generate-regulars')?.valueAsNumber,
+      regularGoalies: $('#generate-regular-goalies')?.valueAsNumber,
+      substitutes: $('#generate-substitutes')?.valueAsNumber,
+      substituteGoalies: $('#generate-substitute-goalies')?.valueAsNumber
+    };
+    if (Object.values(values).some(value => !Number.isInteger(value) || value < 0 || value > 100)) {
+      showModal('Quantités invalides', '<p>Chaque quantité doit être un nombre entier entre 0 et 100.</p>');
+      return;
+    }
+    if (values.regularGoalies > values.regulars || values.substituteGoalies > values.substitutes) {
+      showModal('Nombre de gardiens invalide', '<p>Le nombre de gardiens exclusifs ne peut pas dépasser le total de son groupe.</p>');
+      return;
+    }
+    const templates = [
+      ['defense'],
+      ['attack'],
+      ['defense', 'attack'],
+      ['goalie', 'defense'],
+      ['goalie', 'attack'],
+      ['goalie', 'defense', 'attack']
+    ];
+    const level = () => Math.floor(Math.random() * 11);
+    const createGroup = (total, exclusiveGoalies, status, label) => Array.from({ length: total }, (_, index) => {
+      const positions = index < exclusiveGoalies ? ['goalie'] : [...templates[Math.floor(Math.random() * templates.length)]];
+      return {
+        id: uid(),
+        name: `${label} ${String(index + 1).padStart(2, '0')}`,
+        positions,
+        ratings: { goalie: level(), defense: level(), attack: level() },
+        cardio: level(),
+        status,
+        active: true,
+        incomplete: false
+      };
+    });
+    const regulars = createGroup(values.regulars, values.regularGoalies, 'regulier', 'Régulier');
+    const substitutes = createGroup(values.substitutes, values.substituteGoalies, 'remplacant', 'Remplaçant');
+    state.players = [...regulars, ...substitutes];
+    state.match.present = regulars.map(player => player.id);
+    state.match.goalies = [];
+    state.match.teams = { white: [], black: [] };
+    state.match.presenceInitialized = true;
+    save();
+    showModal('Bassin généré', `<div class="import-summary"><p><strong>${regulars.length}</strong> réguliers créés, dont ${values.regularGoalies} gardiens exclusifs</p><p><strong>${substitutes.length}</strong> remplaçants créés, dont ${values.substituteGoalies} gardiens exclusifs</p></div>`);
+    render();
   }
 
   function assignmentModalBody(playerId) {
@@ -629,16 +688,15 @@
         closeModal();
         save();
         render();
-      } else if (action === 'reset-match') {
-        state.match.date = today();
-        state.match.present = activePlayers().filter(player => player.status === 'regulier').map(player => player.id);
+      } else if (action === 'restart-match') {
         state.match.goalies = [];
         state.match.teams = { white: [], black: [] };
-        setNotice('Le match courant a été réinitialisé.');
+        setNotice('Les affectations ont été effacées; la date et les présences sont conservées.');
         closeModal();
         save();
         render();
-      } else if (action === 'import-players') importPlayers();
+      } else if (action === 'generate-pool') generatePool();
+      else if (action === 'import-players') importPlayers();
       else if (action === 'copy-export') {
         navigator.clipboard?.writeText(exportText());
         button.textContent = 'Copié';
@@ -651,14 +709,20 @@
         link.click();
         URL.revokeObjectURL(url);
       } else if (action === 'confirm-pool-reset') {
-        showModal('Confirmer la réinitialisation', '<p><strong>Tous les joueurs seront supprimés.</strong></p><p>Les présences et équipes courantes seront vidées. L’historique, les noms d’équipe et les préférences seront conservés.</p>', [['Annuler', 'close'], ['Supprimer le bassin', 'pool-reset', 'danger']]);
+        showModal('Confirmer l’effacement', '<p><strong>Tous les joueurs seront supprimés.</strong></p><p>Les présences et équipes courantes seront vidées. L’historique, les noms d’équipe et les préférences seront conservés.</p>', [['Annuler', 'close'], ['Effacer le bassin', 'pool-reset', 'danger']]);
       } else if (action === 'pool-reset') {
         state.players = [];
         state.match.present = [];
         state.match.goalies = [];
         state.match.teams = { white: [], black: [] };
         editingPlayerId = null;
-        setNotice('Le bassin de joueurs a été réinitialisé.');
+        setNotice('Le bassin de joueurs a été effacé.');
+        closeModal();
+        save();
+        render();
+      } else if (action === 'wipe-history') {
+        state.history = [];
+        setNotice('L’historique a été effacé.');
         closeModal();
         save();
         render();
@@ -699,7 +763,8 @@
     const action = button.dataset.action;
     if (action === 'optimize') optimizeTeams();
     else if (action === 'archive') showModal('Archiver le match', '<p>Archiver cette composition? Les équipes courantes seront ensuite vidées.</p>', [['Annuler', 'close'], ['Archiver', 'archive', 'primary']]);
-    else if (action === 'reset') showModal('Réinitialiser le match', '<p>La date, les présences et les équipes courantes seront réinitialisées. Le bassin et l’historique seront conservés.</p>', [['Annuler', 'close'], ['Réinitialiser', 'reset-match', 'danger']]);
+    else if (action === 'restart') showModal('Recommencer', '<p>Effacer toutes les affectations? La date et les présences seront conservées.</p>', [['Annuler', 'close'], ['Recommencer', 'restart-match', 'danger']]);
+    else if (action === 'clear-history') showModal('Effacer l’historique', '<p>Supprimer définitivement tous les matchs archivés? Le bassin et le match courant seront conservés.</p>', [['Annuler', 'close'], ['Effacer l’historique', 'wipe-history', 'danger']]);
     else if (action === 'copy') {
       navigator.clipboard?.writeText($('#share').value);
       button.textContent = 'Copié';
@@ -708,7 +773,7 @@
       attendanceQuery = '';
       showModal('Gérer les présences', '', [], { kind: 'attendance' });
     } else if (action === 'player-settings') {
-      configTab = 'import';
+      configTab = 'generate';
       showModal('Gérer les joueurs', '', [], { kind: 'player-settings' });
     } else if (action === 'cancel') {
       editingPlayerId = null;

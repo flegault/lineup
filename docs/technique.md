@@ -76,6 +76,8 @@ Les affectations n’utilisent aucun glisser-déposer. La modale « Modifier » 
 
 `ensureGoaliesForOptimization()` applique les règles des gardiens exclusifs ou valide leur placement manuel. `optimizeTeams()` conserve ensuite ces gardiens et crée 2 500 répartitions candidates des autres joueurs présents.
 
+L’optimisation exige six patineurs. `assignRoles()` utilise une cible D/A avec trois patineurs par équipe et la cible 2D/2A à partir de quatre.
+
 Le score additionne :
 
 ```text
@@ -94,13 +96,17 @@ somme des notes aux positions affectées
 
 L’indicateur visuel est `max(0, 100 - score × 2)` et ne modifie pas l’algorithme.
 
-## Import, export et réinitialisation
+## Génération, import, export et effacement
+
+`generatePool()` valide quatre quantités de 0 à 100, bloque un bassin non vide et crée les joueurs actifs. Les gardiens exclusifs sont G seulement; les autres utilisent un modèle aléatoire contenant toujours D ou A. Les réguliers générés deviennent les présences initiales et `match.teams` reste vide.
 
 `parseImport()` accepte les formats historiques et le nouveau champ ACTIF/INACTIF. Il valide chaque ligne indépendamment et renvoie joueurs, doublons et erreurs.
 
 `exportText()` produit un format réimportable trié par statut puis par nom. Le téléchargement utilise un `Blob` local et une URL temporaire.
 
-La réinitialisation du bassin vide `players`, `match.present` et `match.teams`, tout en conservant `history` et `settings`.
+L’effacement du bassin vide `players`, `match.present` et `match.teams`, tout en conservant `history` et `settings`. L’effacement de l’historique modifie uniquement `history`.
+
+« Recommencer » vide seulement `match.teams`; la date et `match.present` sont conservées.
 
 ## Accessibilité et mobile
 
@@ -118,4 +124,4 @@ node --check app.js
 git diff --check
 ```
 
-Tests manuels recommandés : migration Actif/Inactif, filtres et pagination, import/export, présences, affectations et retraits, gardiens exclusifs, optimisation, archivage et affichage mobile.
+Tests manuels recommandés : génération, migration Actif/Inactif, filtres et pagination, import/export, présences, affectations et retraits, gardiens exclusifs, optimisation à six patineurs, recommencement, archivage, effacement de l’historique et affichage mobile.
