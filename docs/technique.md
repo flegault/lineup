@@ -4,36 +4,38 @@
 
 Lineup est une SPA statique sans framework, serveur applicatif, dépendance externe ni compilation.
 
-- `index.html` fournit la navigation et les points de montage.
-- `styles.css` contient la présentation mobile-first, les composants joueurs, graphiques et modales.
-- `app.js` contient l’état, les migrations, les trois vues, les règles métier et les événements.
-- `docs/regles-affaires.md` décrit le comportement fonctionnel.
+- `index.html` contient l’en-tête, la navigation et les points de montage.
+- `styles.css` contient la présentation mobile-first, les composants et le radar SVG.
+- `app.js` contient l’état, les vues, les règles métier et les événements.
 
-GitHub Pages sert directement les fichiers et `CNAME` associe le site à `lineup.imaginemoi.ca`.
+GitHub Pages sert directement les fichiers et `CNAME` associe le domaine personnalisé.
 
-## État local
+## Stockage local
 
-La clé principale est `lineup-hockey-v2`; `lineup-hockey-v1` est lue comme solution de repli.
+La clé principale est `lineup-v1`. Si elle n’existe pas, les anciennes clés sont supprimées et un état neuf est créé.
 
 ```text
 state
+├── schemaVersion: 1
 ├── players[]
 │   ├── id, name
 │   ├── positions[]
-│   ├── ratings { goalie, defense, attack }
+│   ├── ratings { goalie, offense, defense }
 │   ├── cardio
 │   ├── status: regulier | remplacant
-│   ├── active: boolean
-│   └── incomplete: boolean
+│   ├── active
+│   └── incomplete
 ├── settings
 │   ├── white, black
 │   ├── balancePositions
-│   └── historyDepth
+│   └── similarityMode: similar | mixed | different
 ├── match
 │   ├── date
 │   ├── present[]
+│   ├── goalies { white, black }
 │   ├── teams { white[], black[] }
-│   └── presenceInitialized
+│   │   └── { playerId, position }
+│   └── prepared
 └── history[]
     ├── date
     └── teams
@@ -41,88 +43,77 @@ state
         └── black { name, players[] { id, name } }
 ```
 
-Une entrée d’équipe courante est `{ player, position }`. Une archive conserve seulement le nom de l’équipe et des objets `{ id, name }`; l’identifiant est technique et n’est jamais affiché.
+Les joueurs constituent l’unique source de vérité. Les équipes courantes ne conservent plus de copie des fiches.
 
-## Migration et normalisation
+## Rendu
 
-- L’ancien `injured: true` devient `active: false`; les autres anciens joueurs deviennent actifs.
-- `injured` n’est plus réécrit dans la sauvegarde.
-- Les propriétés manquantes, cotes et tableaux d’équipe sont normalisés.
-- Les anciennes entrées contenant `assignedPosition` deviennent `{ player, position }`.
-- Les équipes courantes sont nettoyées des joueurs absents ou inactifs au chargement.
-- Les anciennes archives contenant des copies complètes et des positions sont réduites automatiquement au nouveau format `{ id, name }`.
+`render()` reconstruit Match, Joueurs ou Historique. `renderModal()` monte séparément les modales dans `#modal-root`.
 
-## Rendu et composant joueur
+`playerIdentity()` produit la même représentation dans la liste des joueurs, les présences, À assigner, les équipes et les gardiens. Les pastilles compactes affichent G, D ou A avec leur cote sur la même ligne.
 
-`render()` reconstruit `matchView()`, `playersView()` ou `historyView()`. Les modales sont montées séparément dans `#modal-root`.
+Les recherches sont normalisées en Unicode NFD pour ignorer les accents. Les filtres de la page Joueurs et de la modale des présences, incluant la position, restent en mémoire sans être persistés.
 
-`playerIdentity()` fournit la présentation uniforme du joueur. Toutes les positions possèdent leur couleur; une position affectée reçoit en plus l’état visuel sélectionné.
+## Gardiens et assignations
 
-Les filtres Joueurs sont conservés en mémoire dans `playerFilters`, mais ne sont pas persistés. La recherche utilise une normalisation Unicode NFD pour retirer les accents avant la comparaison.
+`reconcileGoalies()` nettoie les choix invalides et place automatiquement deux gardiens exclusifs. `goalieValidation()` vérifie la disponibilité, l’unicité et l’inclusion de tous les gardiens exclusifs.
 
-Le formulaire `playerForm()` est rendu dans la modale `player-editor`. Les erreurs sont injectées dans `#player-form-error`; la comparaison normalisée empêche les doublons manuels sans remplacer la modale.
+Les identifiants verrouillés dans `match.goalies` doivent correspondre aux entrées G des équipes. `applyGoalieSelections()` maintient cet invariant après chaque changement.
 
-## Présences et affectations
+La modale ordinaire ne propose que D et A. La modale dédiée change les gardiens par sélection directe dans la colonne d’une équipe.
 
-La carte de synthèse des présences ouvre une modale dynamique :
+## Optimisation et statistiques
 
-- `attendanceTab` choisit réguliers ou remplaçants;
-- `attendanceQuery` filtre le nom;
-- `lastPlayed()` cherche la date la plus récente d’un match archivé contenant l’identifiant du joueur.
+`optimizeTeams()` conserve les gardiens, répartit tous les autres présents et évalue 2 500 candidats.
 
-Les remplaçants sont triés par date décroissante, puis par nom; une date absente les place après les joueurs ayant déjà participé.
-
-Lors d’un changement de présence, la position de `.modal-body` est capturée avant `render()`, puis restaurée avec le focus du joueur modifié.
-
-Les affectations n’utilisent aucun glisser-déposer. La modale « Modifier » produit seulement les combinaisons permises, empêche un deuxième gardien dans la même équipe et garantit l’unicité du joueur avec `removeFromTeams()` avant l’ajout. Le choix actuel possède `aria-pressed="true"`; le sélectionner de nouveau retire l’affectation. Les modifications sont immédiates et la modale reste ouverte jusqu’au bouton « OK ».
-
-## Optimisation
-
-`ensureGoaliesForOptimization()` applique les règles des gardiens exclusifs ou valide leur placement manuel. `optimizeTeams()` conserve ensuite ces gardiens et crée 2 500 répartitions candidates des autres joueurs présents.
-
-L’optimisation exige six patineurs. `assignRoles()` utilise une cible D/A avec trois patineurs par équipe et la cible 2D/2A à partir de quatre.
-
-Le score additionne :
+Pour chaque équipe, `teamStats()` calcule :
 
 ```text
-écart de force ajustée
-+ écart de force en défense
-+ écart de force en attaque
-+ 5 × écarts de nombres D/A (si activé)
+gardien = cote G du gardien
+attaque = somme OFF des joueurs non gardiens
+défense = somme DEF des joueurs non gardiens
+cardio = moyenne réelle des joueurs non gardiens
+cardio effectif = cardio × (1 - min(max(nombre - 4, 0), 4) / 4)
 ```
 
-La force ajustée vaut :
+Le score d’un candidat est la moyenne des écarts normalisés G, OFF, DEF et cardio effectif. Lorsque l’équilibre des positions est activé, un cinquième composant compare les nombres D et A.
+
+`latestHistoryMatch()` choisit l’archive dont la date est la plus récente. `historicalReference()` construit les paires de coéquipiers encore présents; `candidateSimilarity()` calcule la proportion de ces paires réunies dans un candidat, sans dépendre du côté Blancs/Noirs.
+
+Le meilleur score d’équilibre est déterminé en premier. Les candidats à au plus `0,03` de ce score sont admissibles, ce qui correspond à trois points de qualité. Similaires maximise ensuite la proportion répétée, Différentes la minimise et Mélangées conserve le meilleur score. Sans paire comparable, le mode est forcé à Mélangées.
+
+Le pourcentage affiché vaut `100 × (1 - score)`, borné entre 0 et 100.
+
+Le radar est un SVG à quatre axes. G et cardio sont normalisés sur 10; OFF et DEF utilisent comme dénominateur commun le plus grand effectif non gardien des deux équipes multiplié par 10. Le tableau reste la référence pour les valeurs exactes.
+
+## Cycle et archives
+
+`prepared` passe à vrai lors d’une assignation manuelle, d’un choix manuel de gardien ou d’une optimisation. Cette propriété est persistée afin de préserver la confirmation Nouveau après rechargement.
+
+`resetMatch()` vide date et assignations, restaure les réguliers actifs et réconcilie les gardiens. `restartAssignments()` conserve date et présences. L’archivage crée une copie minimale `{ id, name }`, puis appelle la remise à zéro.
+
+`lastPlayed()` utilise les identifiants archivés pour classer les remplaçants.
+
+## Import et export
+
+`parseImport()` accepte uniquement :
 
 ```text
-somme des notes aux positions affectées
-+ cardio moyen des patineurs × (1 - min(joueurs additionnels, 4) / 4)
+REG | Nom | GDA | G,OFF,DEF,CARDIO | ACTIF
+REM | Nom | INACTIF
 ```
 
-L’indicateur visuel est `max(0, 100 - score × 2)` et ne modifie pas l’algorithme.
+Les lignes sont validées indépendamment. `x` doit correspondre à une cote non applicable. Le fichier téléchargé commence par `\uFEFF`; le presse-papiers reste sans BOM.
 
-## Génération, import, export et effacement
+## Mobile et accessibilité
 
-`generatePool()` valide quatre quantités de 0 à 100, bloque un bassin non vide et crée les joueurs actifs. Les gardiens exclusifs sont G seulement; tous les autres utilisent exclusivement D, A ou D+A. Les réguliers générés deviennent les présences initiales et `match.teams` reste vide.
-
-`parseImport()` accepte les formats historiques et le nouveau champ ACTIF/INACTIF. Il valide chaque ligne indépendamment et renvoie joueurs, doublons et erreurs.
-
-`exportText()` produit un format réimportable trié par statut puis par nom. Le téléchargement utilise un `Blob` local et une URL temporaire.
-
-Le téléchargement préfixe le texte avec `\uFEFF` pour signaler UTF-8 aux logiciels Windows. Le presse-papiers reste sans BOM et `parseImport()` retire un BOM éventuel avant la lecture de la première ligne.
-
-L’effacement du bassin vide `players`, `match.present` et `match.teams`, tout en conservant `history` et `settings`. L’effacement de l’historique modifie uniquement `history`.
-
-« Recommencer » vide seulement `match.teams`; la date et `match.present` sont conservées.
-
-## Accessibilité et mobile
-
-- Les cartes interactives sont de vrais boutons ou libellés natifs.
+- Les cartes interactives sont des boutons ou libellés natifs.
 - Les modales utilisent `role="dialog"` et `aria-modal="true"`.
-- Les actions disposent de noms accessibles et de zones tactiles d’au moins 44 px.
-- Sur mobile, les modales deviennent des panneaux presque plein écran et les équipes sont empilées.
-- L’ajout et la modification utilisent une modale presque plein écran sur mobile, sans défilement préalable de la page.
-- Les modales acceptent Échap, mémorisent leur déclencheur et lui rendent le focus à la fermeture.
-- Aucun `alert()`, `confirm()` ni glisser-déposer n’est utilisé.
+- La modale des présences a une hauteur stable et seule sa liste défile.
+- Le radar possède une description accessible et toutes ses valeurs existent aussi dans un tableau.
+- Les indicateurs combinent couleur, icône et texte.
+- Échap ferme une modale et le focus revient au déclencheur lorsque possible.
+- Les modifications d’assignation restaurent le défilement de la page, celui de la modale et le focus avec `preventScroll`.
+- Aucun dialogue natif ni glisser-déposer n’est utilisé.
 
 ## Vérification
 
@@ -131,4 +122,4 @@ node --check app.js
 git diff --check
 ```
 
-Tests manuels recommandés : génération, migration Actif/Inactif, filtres et pagination, import/export, présences, affectations et retraits, gardiens exclusifs, optimisation à six patineurs, recommencement, archivage, effacement de l’historique et affichage mobile.
+Les vérifications manuelles couvrent le stockage neuf, joueurs, import/export, présences, gardiens, optimisation, nouveau match, archivage, historique, radar et affichage mobile.

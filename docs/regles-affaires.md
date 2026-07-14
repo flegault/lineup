@@ -1,95 +1,103 @@
 # Règles d’affaires actuelles
 
-Ce document décrit le comportement appliqué par la version actuelle de Lineup.
+## Fiche joueur
 
-## Joueurs
+- Un joueur possède un nom, un statut Régulier ou Remplaçant et un état Actif ou Inactif.
+- Les positions jouables sont Gardien, Défense et Attaque.
+- Un joueur D ou A possède toujours une cote offensive et une cote défensive entières de 0 à 10.
+- Un gardien exclusif possède une cote de gardien et un cardio. Un gardien polyvalent possède également les cotes offensive et défensive.
+- Une cote déjà saisie est conservée lorsqu’une position est décochée puis réactivée.
+- Une fiche importée sans position est indiquée « À compléter » et ne peut pas être optimisée.
+- Un joueur inactif reste dans la liste, mais est exclu des présences, des équipes et des gardiens disponibles.
 
-- Un joueur possède un nom, une ou plusieurs positions parmi gardien, défense et attaque, une note entière de 0 à 10 pour chaque position jouable et un cardio entier de 0 à 10.
-- La note d’une position est conservée si elle est désactivée puis réactivée. Une position activée pour la première fois commence à 5.
-- Un joueur est régulier ou remplaçant. Ce statut influence la présence initiale, mais pas sa force.
-- Un joueur est actif ou inactif. Un inactif reste dans le bassin, mais il est exclu des présences, des équipes, des gardiens disponibles et des remplaçants sélectionnables.
-- Une fiche sans position est marquée « À compléter » et ne peut pas participer à une optimisation.
-- Toutes les listes utilisent la même présentation : nom, positions G/D/A toujours colorées, niveau sous chaque pastille et cardio.
+## Liste des joueurs
 
-## Consultation du bassin
+- Joueurs affiche une seule liste à la fois avec le sélecteur Réguliers/Remplaçants.
+- Les totaux actifs et inactifs sont affichés séparément.
+- Le filtre Actifs est sélectionné par défaut; Inactifs et Tous sont également disponibles.
+- Le filtre de position Gardien/Défense/Attaque/Tous se combine aux autres filtres. Un joueur polyvalent apparaît pour chaque position qu’il peut jouer.
+- La recherche par nom utilise une correspondance « contient » sans distinction de casse ou d’accent et reste active au changement de statut.
+- Les deux listes sont alphabétiques. Les remplaçants sont paginés par groupes de 10.
+- Ajouter un joueur ou toucher sa ligne ouvre le formulaire dans une modale.
+- Un nom en double est refusé sans distinction de casse, d’accent ou d’espaces superflus.
+- Les pastilles G/D/A montrent leur cote sur une seule ligne. Une position non jouable associée à une cote OFF ou DÉF est atténuée; la position assignée est mise en évidence.
 
-- « Ajouter un joueur » et le clic sur un joueur ouvrent le formulaire dans une modale; la liste conserve toute la largeur de la page.
-- Annuler, fermer ou utiliser Échap abandonne les changements non enregistrés sans confirmation.
-- Un ajout ou une modification refuse un nom déjà utilisé en ignorant casse, accents et espaces superflus.
-- Les erreurs du formulaire restent dans la modale et ne suppriment pas les valeurs saisies.
-- Les réguliers et remplaçants sont triés alphabétiquement, sans regrouper les inactifs à part.
-- Chaque section affiche ses nombres totaux d’actifs et d’inactifs. Ces totaux ne changent pas avec les filtres.
-- Chaque section possède une recherche par nom et un filtre Tous/Actifs/Inactifs indépendants.
-- La recherche utilise une correspondance « contient » sans distinction de casse ou d’accents.
-- Les remplaçants sont paginés après filtrage, à raison de 10 par page. Les réguliers ne sont pas paginés.
+## Présences et gardiens
 
-## Présences et date
+- Un nouveau match sélectionne tous les réguliers actifs et aucun remplaçant.
+- La carte Joueurs présents ouvre la modale des présences.
+- Les réguliers sont alphabétiques. Les remplaçants sont classés par dernière participation archivée, de la plus récente à la plus ancienne, puis par nom.
+- Les filtres de nom et de position sont conservés entre les deux listes, et la modale garde une taille stable.
+- Retirer une présence enlève aussi les assignations du joueur sans modifier les autres.
+- Cliquer Gardiens disponibles ouvre une modale avec un emplacement par équipe.
+- Tous les gardiens exclusifs présents doivent être sélectionnés.
+- Exactement deux gardiens exclusifs sont placés automatiquement, un par équipe. Leur placement valide est conservé; sinon l’ordre alphabétique détermine les côtés.
+- Moins de deux gardiens disponibles bloque l’optimisation. Au-delà de deux gardiens exclusifs présents, ils doivent recevoir une autre position ou être retirés des présences.
+- Avec moins de deux gardiens exclusifs et au moins deux gardiens disponibles, l’organisateur complète la sélection manuellement.
+- Les gardiens choisis sont verrouillés et ne peuvent être modifiés que depuis leur modale dédiée.
 
-- À l’initialisation ou après la génération d’un bassin, tous les réguliers actifs sont présents.
-- La carte « Joueurs présents » ouvre la gestion des présences.
-- La gestion affiche les réguliers par défaut et permet de passer aux remplaçants.
-- Les réguliers sont triés alphabétiquement.
-- Les remplaçants ayant déjà joué sont triés par date de match la plus récente, puis alphabétiquement; ceux n’ayant jamais joué sont placés à la fin.
-- Seuls les matchs archivés comptent comme participation.
-- Retirer une présence retire aussi ce joueur de son équipe, sans modifier les autres affectations.
-- Modifier une présence conserve la position de défilement, l’onglet, la recherche et le focus dans la modale.
-- La date est initialisée à aujourd’hui. Optimiser les équipes ne la modifie jamais.
-- « Recommencer » conserve la date et les présences, puis vide uniquement les affectations des deux équipes.
+## Cycle du match
 
-## Affectation aux équipes
+- La date commence vide et est obligatoire uniquement pour Archiver.
+- Optimiser ne modifie jamais la date.
+- Copier le message reste permis sans date; la ligne de date est alors omise.
+- Une assignation manuelle, une modification manuelle des gardiens ou une optimisation marque le match comme préparé.
+- Une date, un changement de présence ou le placement automatique des gardiens ne marque pas le match comme préparé.
+- Nouveau réinitialise immédiatement un match non préparé.
+- Pour un match préparé, Nouveau propose d’effacer, d’archiver ou d’annuler.
+- Un archivage exige une date, un gardien et au moins trois autres joueurs dans chaque équipe.
+- Les présents non assignés et l’écart numérique entre équipes n’empêchent pas l’archivage.
+- Après Nouveau ou Archiver, la date et les assignations sont vidées et les réguliers actifs redeviennent présents.
+- Recommencer conserve la date et les présences, puis efface toutes les assignations. Deux gardiens exclusifs présents sont aussitôt replacés automatiquement.
 
-- Une carte au-dessus des équipes affiche les joueurs présents non assignés lorsqu’il y en a.
-- Toucher un joueur ouvre la modale « Modifier » et les combinaisons équipe/position permises par sa fiche.
-- La combinaison actuelle est sélectionnée. La toucher de nouveau retire le joueur de l’équipe tout en conservant sa présence.
-- Toucher une autre combinaison affecte ou réaffecte immédiatement le joueur, sans fermer la modale.
-- Le bouton « OK » ferme la modale lorsque les ajustements sont terminés.
-- « Rendre absent » le retire de son équipe et des présences.
-- Un joueur ne peut apparaître qu’une seule fois dans les deux équipes.
-- Un joueur affecté comme gardien peut changer d’équipe, mais doit rester gardien.
-- Toutes les positions jouables d’un joueur polyvalent restent colorées et visibles; sa position affectée possède en plus un indicateur de sélection.
-- Les noms « Blancs » et « Noirs » sont modifiables directement et persistent.
+## Assignation et optimisation
 
-## Gardiens et optimisation
+- Les joueurs présents sans équipe apparaissent dans la section À assigner.
+- Toucher un joueur ouvre Modifier et présente uniquement ses combinaisons équipe/position D ou A.
+- Toucher de nouveau la combinaison sélectionnée enlève le joueur de l’équipe tout en le gardant présent.
+- Rendre absent enlève le joueur des présences et de son équipe.
+- Un joueur ne peut apparaître qu’une fois.
+- Optimiser exige deux gardiens valides et au moins six autres joueurs.
+- L’algorithme évalue 2 500 répartitions, conserve les gardiens et limite l’écart numérique à un joueur.
+- Optimiser ouvre une modale contenant l’équilibre des positions et le choix Similaires/Mélangées/Différentes par rapport au match archivé ayant la date la plus récente.
+- Similaires maximise les paires de coéquipiers répétées; Mélangées ignore l’historique; Différentes minimise ces paires.
+- Les absents et nouveaux joueurs ne participent pas à la comparaison historique. Sans paire comparable, Mélangées est imposé.
+- L’équilibre demeure prioritaire : la similitude départage seulement les candidats situés à trois points ou moins du meilleur équilibre.
+- Les dernières options d’optimisation utilisées sont conservées localement. L’équilibre du nombre d’attaquants et de défenseurs est activé par défaut.
+- Avec trois joueurs non gardiens par équipe, la cible comporte au moins un D et un A; à quatre ou plus, elle vise deux D et deux A.
 
-- Chaque équipe doit contenir exactement un gardien pour optimiser.
-- S’il y a exactement deux gardiens présents qui jouent uniquement gardien, l’application en place automatiquement un dans chaque équipe et conserve leur placement existant.
-- S’il y a plus de deux gardiens présents qui jouent uniquement gardien, l’optimisation est bloquée. Il faut ajouter une position à certains joueurs ou retirer des gardiens des présences.
-- Dans les autres cas, l’organisateur affecte manuellement un gardien à chaque équipe.
-- « Optimiser les équipes » conserve les gardiens, redistribue les autres joueurs présents et ne change pas la date.
-- Au moins six patineurs sont requis, soit un gardien et trois patineurs par équipe.
-- Avec trois patineurs, l’optimisation cherche au moins un défenseur et un attaquant par équipe; à quatre ou plus, elle vise deux défenseurs et deux attaquants.
+## Statistiques
 
-## Équilibre et statistiques
+- Les quatre dimensions sont évaluées séparément : Gardien, Attaque, Défense et Cardio.
+- Attaque additionne les cotes offensives de tous les joueurs non gardiens.
+- Défense additionne leurs cotes défensives.
+- Cardio affiche la moyenne réelle des joueurs non gardiens.
+- Son influence dans l’optimisation est complète jusqu’à quatre joueurs non gardiens, puis diminue de 25 % par joueur additionnel et devient nulle à huit.
+- L’équilibre global est calculé à partir des écarts normalisés des quatre dimensions et, si activé, de l’écart de nombres D/A.
+- Le radar normalise seulement le dessin. Le tableau conserve les valeurs réelles.
+- Les statistiques, le radar et la répartition G/D/A sont recalculés après chaque modification.
 
-- L’algorithme évalue 2 500 compositions aléatoires et conserve celle ayant le plus petit écart.
-- Le calcul compare la force ajustée, la défense et l’attaque. Lorsque l’équilibre des positions est activé, il pénalise aussi les écarts de nombre en défense et en attaque.
-- La force ajustée additionne les notes aux positions affectées et un apport du cardio moyen des patineurs.
-- L’effet du cardio diminue avec le nombre de joueurs au-delà des quatre patineurs de base et devient nul à partir de quatre joueurs additionnels.
-- Les statistiques et graphiques se recalculent après chaque présence ou affectation.
-- Le réglage de variété de 0 à 5 derniers matchs demeure conservé, mais n’influence pas encore le calcul actuel.
+## Indicateurs de disponibilité
 
-## Génération, importation, exportation et effacement
+- Joueurs présents : 14 et plus vert, 12 à 13 jaune, 11 ou moins rouge. Sous 8, le minimum requis est explicitement indiqué.
+- Gardiens : exactement deux exclusifs vert; sélection polyvalente possible jaune; moins de deux disponibles ou plus de deux exclusifs rouge.
+- Une icône et un texte accompagnent toujours la couleur.
 
-- La configuration des joueurs est accessible avec le bouton engrenage.
-- Le générateur fonctionne seulement lorsque le bassin est vide et demande les totaux de réguliers, remplaçants et gardiens exclusifs de chaque statut.
-- Les gardiens exclusifs sont inclus dans les totaux et sont les seuls joueurs générés pouvant jouer gardien. Les autres reçoivent D, A ou D+A.
-- Les joueurs générés sont actifs, portent des noms numérotés et reçoivent des niveaux et un cardio entiers de 0 à 10.
-- La génération n’impose aucun minimum et sélectionne les réguliers générés comme présents, sans les affecter à une équipe.
-- Le format complet est `REG | Nom | G,D,A,cardio | ACTIF` ou `REM | Nom | G,D,A,cardio | INACTIF`.
-- `x` signifie que la position n’est pas jouée. L’état est toujours explicite dans un export.
-- Un ancien format sans état reste accepté et crée un joueur actif.
-- Une fiche sans position peut être importée avec `REG | Nom | ACTIF` ou `REM | Nom | INACTIF`.
-- Les doublons de nom, sans égard aux majuscules, accents et espaces superflus, sont ignorés.
-- L’export peut être copié ou téléchargé en fichier texte puis réimporté.
-- La syntaxe exportée utilise uniquement des codes ASCII; seuls les noms peuvent contenir des accents.
-- Le fichier téléchargé utilise UTF-8 avec BOM pour préserver les accents des noms. L’import accepte les textes avec ou sans BOM.
-- Effacer le bassin supprime les joueurs et vide les présences et équipes courantes, mais conserve l’historique, les noms d’équipe et les préférences.
+## Import, export et génération
 
-## Archivage et persistance
+- Le format complet est `REG | Nom | DA | x,7,5,6 | ACTIF`.
+- Les cotes sont toujours dans l’ordre `G,OFF,DEF,CARDIO`.
+- Les codes importés et exportés sont ASCII; seuls les noms peuvent contenir des accents.
+- Un gardien exclusif utilise par exemple `REG | Bobby | G | 8,x,x,1 | ACTIF`.
+- Une fiche sans position utilise `REG | Nom | ACTIF`.
+- L’ancien format n’est pas accepté.
+- Les doublons sont ignorés selon la même normalisation que le formulaire.
+- Le téléchargement texte utilise UTF-8 avec BOM; la copie n’ajoute pas de BOM.
+- Le générateur crée uniquement des gardiens exclusifs G. Les autres joueurs reçoivent D, A ou DA ainsi que des cotes OFF/DÉF et un cardio entiers.
 
-- Archiver copie la date, les noms d’équipe et les noms des joueurs, puis vide les équipes courantes.
-- Un identifiant de joueur invisible est conservé dans l’archive uniquement pour calculer sa dernière participation.
-- « Effacer l’historique » supprime toutes les archives sans modifier le bassin ni le match courant.
-- Le texte de partage contient la date, les équipes, les joueurs et leur position.
-- Les joueurs, préférences, match courant et archives sont stockés uniquement dans `localStorage`.
-- Les données ne sont ni synchronisées ni sauvegardées sur un serveur.
+## Historique et persistance
+
+- Une archive conserve la date, les noms d’équipe et les objets techniques `{ id, name }` des joueurs, sans leurs positions.
+- Les matchs sont repliés par défaut. La date et la suppression restent visibles; les équipes apparaissent au développement.
+- Effacer l’historique ne modifie ni les joueurs ni le match courant.
+- Toutes les données restent uniquement dans le navigateur.

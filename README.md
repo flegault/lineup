@@ -1,32 +1,34 @@
 # Lineup
 
-Application web autonome pour former deux équipes de hockey amical équilibrées.
+Application web autonome pour préparer deux équipes équilibrées.
 
-Elle permet de gérer ou importer un bassin de joueurs, choisir les présences, affecter les positions par clic, puis optimiser deux équipes équilibrées. Les statistiques, graphiques, archives et données du match sont conservés localement dans le navigateur.
+Lineup permet de gérer ou importer une liste de joueurs, choisir les présences, assigner les gardiens et les autres positions, puis optimiser les équipes. Les statistiques, le radar, les archives et le match courant sont conservés localement dans le navigateur.
 
 ## Utilisation
 
-Ouvrez `index.html` dans un navigateur moderne. Aucune installation ni serveur n’est nécessaire.
+Ouvrir `index.html` dans un navigateur moderne ou visiter le site publié avec GitHub Pages.
 
-Les données du bassin, du match en cours, des préférences et de l’historique sont stockées dans `localStorage` sur l’appareil utilisé.
+- **Match** : date, présences, gardiens, optimisation, équipes, statistiques et partage.
+- **Joueurs** : réguliers et remplaçants, filtres, ajout et modification.
+- **Historique** : compositions archivées.
+- **Configuration** : import, export, génération et effacement des joueurs.
 
-## Règles d’affaires
+## Données
 
-Les règles appliquées par l’application sont décrites dans [la documentation des règles d’affaires](docs/regles-affaires.md).
+L’application est sans serveur, compte ou dépendance externe. Les données sont conservées dans `localStorage` sous la clé `lineup-v1`.
 
-L’architecture et les détails d’implémentation sont décrits dans [la documentation technique](docs/technique.md).
+La mise à jour vers cette version initialise volontairement un nouveau stockage et supprime les anciennes données locales.
 
-## Déploiement sur GitHub Pages
+## Documentation
 
-1. Envoyez le contenu de ce dépôt sur la branche `main` de [`flegault/lineup`](https://github.com/flegault/lineup).
-2. Dans GitHub, ouvrez **Settings → Pages**.
-3. Choisissez **Deploy from a branch**, puis la branche `main` et le dossier `/ (root)`.
-4. Dans **Custom domain**, inscrivez `lineup.imaginemoi.ca`.
-5. Chez votre fournisseur DNS, créez un enregistrement `CNAME` pour `lineup` qui pointe vers `flegault.github.io`.
-6. Activez **Enforce HTTPS** lorsqu’il devient disponible.
+- [Règles d’affaires](docs/regles-affaires.md)
+- [Documentation technique](docs/technique.md)
+- [Roadmap](docs/roadmap.md)
 
-Avant de lier le domaine, vérifiez `imaginemoi.ca` dans les paramètres GitHub afin de protéger ses sous-domaines.
+## Déploiement
+
+Le dépôt est publié directement avec GitHub Pages. Le fichier `CNAME` associe le domaine personnalisé.
 
 ## Licence
 
-Ce projet est distribué sous licence MIT; consultez le fichier [`LICENSE`](LICENSE).
+MIT — voir [LICENSE](LICENSE).
